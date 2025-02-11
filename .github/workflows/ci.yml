@@ -1,0 +1,58 @@
+name: Run MWLFS Script
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '*/15 * * * *'
+
+jobs:
+  run-script:
+    concurrency:
+      group: run-ruby-script
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    env:
+      MYSITE_LIVE_URL: ${{ secrets.MYSITE_LIVE_URL }}
+      GMAIL_FROM: ${{ secrets.GMAIL_FROM }}
+      GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+      GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+      GMAIL_DOMAIN: ${{ secrets.GMAIL_DOMAIN }}
+      GMAIL_SMTP_SERVER: ${{ secrets.GMAIL_SMTP_SERVER }}
+      GMAIL_SMTP_PORT: ${{ secrets.GMAIL_SMTP_PORT }}
+      CRITICAL_RECIPIENTS: ${{ secrets.CRITICAL_RECIPIENTS }}
+      ERROR_COMPLETION_RECIPIENT: ${{ secrets.ERROR_COMPLETION_RECIPIENT }}
+      SPECIAL_USERNAMES: ${{ secrets.SPECIAL_USERNAMES }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.3'
+
+      - name: Install dependencies
+        run: |
+          gem install selenium-webdriver csv net-smtp dotenv
+
+      - name: Run MWLFS script
+        env:
+          MYSITE_LIVE_URL: ${{ secrets.MYSITE_LIVE_URL }}
+          GMAIL_FROM: ${{ secrets.GMAIL_FROM }}
+          GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+          GMAIL_DOMAIN: ${{ secrets.GMAIL_DOMAIN }}
+          GMAIL_SMTP_SERVER: ${{ secrets.GMAIL_SMTP_SERVER }}
+          GMAIL_SMTP_PORT: ${{ secrets.GMAIL_SMTP_PORT }}
+          CRITICAL_RECIPIENTS: ${{ secrets.CRITICAL_RECIPIENTS }}
+          ERROR_COMPLETION_RECIPIENT: ${{ secrets.ERROR_COMPLETION_RECIPIENT }}
+          SPECIAL_USERNAMES: ${{ secrets.SPECIAL_USERNAMES }}
+        run: ruby app/main.rb
+
+      - name: Upload CSV Artifact
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: rooms-csv
+          path: "rooms_*.csv"
